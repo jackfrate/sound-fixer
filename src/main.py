@@ -8,7 +8,8 @@ from datetime import datetime
 
 
 # this is unironically a good sound value, usually its above this when the vent comes on
-RMS_THRESHHOLD = 100
+RMS_THRESHHOLD = 690
+# RMS_THRESHHOLD = 100 # good for testing
 
 # IP of the roku device
 IP_ADDDR = '192.168.1.11'
