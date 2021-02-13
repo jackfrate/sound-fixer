@@ -7,84 +7,95 @@ from roku import Roku
 from datetime import datetime
 
 
-RMS_THRESHHOLD = 420
+# this is unironically a good sound value, usually its above this when the vent comes on
+RMS_THRESHHOLD = 690
 
+# IP of the roku device
 IP_ADDDR = '192.168.1.11'
-VOLUME_CLICKS = 6
 
-chunk = 1024
+VOLUME_CLICKS = 5
+
+# audio stuff
+CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-# RATE = 44100
 RATE = 48000
+
+# logging
+SHOULD_LOG = True
+
+# If we're in the loud level
 IS_LOUD = False
 
 roku = Roku(IP_ADDDR)
-
-# TODO: make it turn up 4 clicks every ~200 units of sound
-# 100-399 tranquil
-# 399-
 
 
 def roku_vol_up():
     for _ in range(0, VOLUME_CLICKS):
         roku.volume_up()
-        time.sleep(0.05)
 
 
 def roku_vol_down():
     for _ in range(0, VOLUME_CLICKS):
         roku.volume_down()
-        time.sleep(0.05)
 
 
 def average_list(lst):
     return sum(lst) / len(lst)
 
 
+def logger(message):
+    if SHOULD_LOG:
+        print(message)
+
+
 p = pyaudio.PyAudio()
 print("IGNORE THESE ERRORS ITS ALL GOOD DWAG")
-prev_rms = RMS_THRESHHOLD-1
-i = 0
-i_limit = 10
+
+i = 0   # counter for loop
+
+# this is so anomiloes don't constantly change the volume
 # makes a list of the size i_limit
-avg_list = [RMS_THRESHHOLD-100] * i_limit
+rms_average_size = 10
+avg_rms = [RMS_THRESHHOLD-100] * rms_average_size
+
+# main loop, one second seems to work best
 while True:
+    # do audio stuff
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE,
-                    input=True, output=True, frames_per_buffer=chunk)
-    data = stream.read(chunk)
+                    input=True, output=True, frames_per_buffer=CHUNK)
+    data = stream.read(CHUNK)
+
+    # idk what unit of measure it is, but its consistent
     current_rms = audioop.rms(data, 2)
 
-    avg_list[i] = current_rms
-    # this is so anomiloes don't fuck up our threshhold
-    test_rms = average_list(avg_list)
+    avg_rms[i] = current_rms
+    test_rms = average_list(avg_rms)
 
-    # test_rms = current_rms
-
-    # set is loud
     if test_rms > RMS_THRESHHOLD:
         if not IS_LOUD:
-            print(datetime.now().strftime("%H:%M:%S") +
-                  '-----------------volume up')
+            logger(datetime.now().strftime("%H:%M:%S") +
+                   '-----------------volume up')
             roku_vol_up()
 
         IS_LOUD = True
     if test_rms < RMS_THRESHHOLD:
         if IS_LOUD:
-            print(datetime.now().strftime("%H:%M:%S") +
-                  '-----------------volume down')
+            logger(datetime.now().strftime("%H:%M:%S") +
+                   '-----------------volume down')
             roku_vol_down()
         IS_LOUD = False
 
-    print(test_rms)
-    prev_rms = current_rms
+    logger(test_rms)
 
     # clean up stream so it doesn't overflow
     stream.stop_stream()
     stream.close()
+
+    # increment counter
+    i += 1
+    if i == rms_average_size:
+        i = 0
+
     # wait
     time.sleep(1)
-    i += 1
-    if i == i_limit:
-        i = 0
-# p.terminate()
