@@ -8,7 +8,7 @@ from datetime import datetime
 
 
 # this is unironically a good sound value, usually its above this when the vent comes on
-RMS_THRESHHOLD = 690
+RMS_THRESHHOLD = 100
 
 # IP of the roku device
 IP_ADDDR = '192.168.1.11'
@@ -25,23 +25,9 @@ RATE = 48000
 SHOULD_LOG = True
 
 # If we're in the loud level
-IS_LOUD = False
+LOUD_NOW = False
 
 roku = Roku(IP_ADDDR)
-
-
-def roku_vol_up():
-    for _ in range(0, VOLUME_CLICKS):
-        roku.volume_up()
-
-
-def roku_vol_down():
-    for _ in range(0, VOLUME_CLICKS):
-        roku.volume_down()
-
-
-def average_list(lst):
-    return sum(lst) / len(lst)
 
 
 def logger(message):
@@ -49,15 +35,44 @@ def logger(message):
         print(message)
 
 
+def make_timestamp(message: str = ''):
+    return f'{datetime.now().strftime("%H:%M:%S")} -> {message}'
+
+
+def roku_vol_up():
+    msg = make_timestamp('volume up')
+    logger(msg)
+    try:
+        for _ in range(0, VOLUME_CLICKS):
+            roku.volume_up()
+    except:
+        logger('could not connect')
+
+
+def roku_vol_down():
+    msg = make_timestamp('volume down')
+    logger(msg)
+    try:
+        for _ in range(0, VOLUME_CLICKS):
+            roku.volume_down()
+    except:
+        logger('could not connect')
+
+
+def average_list(lst):
+    return sum(lst) / len(lst)
+
+
+# this makes a bunch of errors that are a) ok and b) non-suppressable
 p = pyaudio.PyAudio()
 print("IGNORE THESE ERRORS ITS ALL GOOD DWAG")
 
-i = 0   # counter for loop
 
 # this is so anomiloes don't constantly change the volume
 # makes a list of the size i_limit
 rms_average_size = 10
 avg_rms = [RMS_THRESHHOLD-100] * rms_average_size
+i = 0   # counter for loop
 
 # main loop, one second seems to work best
 while True:
@@ -73,18 +88,14 @@ while True:
     test_rms = average_list(avg_rms)
 
     if test_rms > RMS_THRESHHOLD:
-        if not IS_LOUD:
-            logger(datetime.now().strftime("%H:%M:%S") +
-                   '-----------------volume up')
+        if not LOUD_NOW:
             roku_vol_up()
+        LOUD_NOW = True
 
-        IS_LOUD = True
     if test_rms < RMS_THRESHHOLD:
-        if IS_LOUD:
-            logger(datetime.now().strftime("%H:%M:%S") +
-                   '-----------------volume down')
+        if LOUD_NOW:
             roku_vol_down()
-        IS_LOUD = False
+        LOUD_NOW = False
 
     logger(test_rms)
 
