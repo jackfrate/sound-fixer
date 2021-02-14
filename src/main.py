@@ -14,6 +14,7 @@ RMS_THRESHHOLD = 690
 # IP of the roku device
 IP_ADDDR = '192.168.1.11'
 
+# how many clicks to adjust the volume
 VOLUME_CLICKS = 5
 
 # audio stuff
