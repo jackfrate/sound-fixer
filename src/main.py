@@ -67,7 +67,7 @@ def average_list(lst):
 
 # this makes a bunch of errors that are a) ok and b) non-suppressable
 p = pyaudio.PyAudio()
-print("IGNORE THESE ERRORS ITS ALL GOOD DWAG")
+print("IGNORE THESE ERRORS ITS ALL GOOD DAWG")
 
 
 # this is so anomiloes don't constantly change the volume
